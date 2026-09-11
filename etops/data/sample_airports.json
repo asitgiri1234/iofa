@@ -1,0 +1,7 @@
+[
+  {"icao": "CYQX", "name": "Gander Intl", "lat": 48.9369, "lon": -54.5681},
+  {"icao": "BIKF", "name": "Keflavik", "lat": 63.9850, "lon": -22.6056},
+  {"icao": "EINN", "name": "Shannon", "lat": 52.7019, "lon": -8.9248},
+  {"icao": "LPLA", "name": "Lajes Field (Azores)", "lat": 38.7619, "lon": -27.0908},
+  {"icao": "CYYT", "name": "St. John's", "lat": 47.6186, "lon": -52.7519}
+]

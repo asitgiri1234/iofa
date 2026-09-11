@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -72,6 +72,11 @@ def parse_timestamp(value: str) -> datetime:
     if dt.tzinfo is None:
         raise ValueError(f"Timestamp has no timezone: {value!r}")
     return dt
+
+
+def format_timestamp(dt: datetime) -> str:
+    """Inverse of ``parse_timestamp``: ``2026-07-25T06:00:00Z``."""
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _read_json(path: Path | str):

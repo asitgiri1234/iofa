@@ -1,4 +1,6 @@
-shapely
-folium
-streamlit
-pytest
+# Tested with Python 3.13: shapely 2.1.2, folium 0.20.0, streamlit 1.49.1, pandas 2.2.3, pytest 9.1.1
+shapely>=2.0,<3
+folium>=0.17,<1
+streamlit>=1.49,<2
+pandas>=2.0,<3
+pytest>=8

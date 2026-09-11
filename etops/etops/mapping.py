@@ -1,1 +1,174 @@
-"""Not yet implemented."""
+"""Folium map of the wind-adjusted rings, the route, and per-waypoint coverage."""
+
+from __future__ import annotations
+
+from html import escape
+
+import folium
+
+from etops.loaders import Airport
+
+SNAPSHOT_COLORS = ["#1f77b4", "#ff7f0e", "#9467bd", "#8c564b", "#17becf"]  # no red/green
+COVERED_COLOR = "#2ca02c"
+GAP_COLOR = "#d62728"
+ROUTE_COLOR = "#444444"
+
+
+def _short(ts: str) -> str:
+    """'2026-07-25T06:00:00Z' -> '2026-07-25 06:00Z'."""
+    return f"{ts[:10]} {ts[11:16]}Z"
+
+
+def _ranges(numbers: list[int]) -> str:
+    """[1, 2, 3, 5] -> '1-3, 5'. Plain hyphen: folium JSON-escapes non-ASCII in layer names."""
+    runs: list[list[int]] = []
+    for n in numbers:
+        if runs and n == runs[-1][-1] + 1:
+            runs[-1].append(n)
+        else:
+            runs.append([n])
+    return ", ".join(str(r[0]) if len(r) == 1 else f"{r[0]}-{r[-1]}" for r in runs)
+
+
+def _popup_html(number: int, wp: dict) -> str:
+    status = (
+        f'<b style="color:{COVERED_COLOR}">Covered</b>' if wp["covered"]
+        else f'<b style="color:{GAP_COLOR}">Not covered (gap)</b>'
+    )
+    covering = ", ".join(wp["covering_airports"]) or "none"
+    return (
+        f"<b>Waypoint {number}</b> &mdash; {status}<br>"
+        f"{wp['lat']:.4f}, {wp['lon']:.4f}<br>"
+        f"ETA: {escape(wp['eta'])}<br>"
+        f"Snapshot used: {escape(wp['snapshot_used'])}<br>"
+        f"Covered by: {escape(covering)}<br>"
+        f"Nearest airport: {escape(wp.get('nearest_airport', '?'))} "
+        f"({wp['nearest_airport_nm']:.1f} nm)"
+    )
+
+
+def _legend_html(shown: list[str], colors: dict[str, str], report: dict) -> str:
+    swatch = (
+        '<span style="display:inline-block;width:14px;height:10px;margin-right:6px;'
+        'border:2px solid {c};background:{c}22;vertical-align:middle"></span>'
+    )
+    dot = (
+        '<span style="display:inline-block;width:11px;height:11px;border-radius:50%;'
+        'margin-right:6px;background:{c};border:1.5px solid #fff;box-shadow:0 0 0 1px #999;'
+        'vertical-align:middle"></span>'
+    )
+    rows = [
+        f"<div>{dot.format(c=COVERED_COLOR)}Covered waypoint</div>",
+        f"<div>{dot.format(c=GAP_COLOR)}Uncovered waypoint (gap)</div>",
+        '<div><span style="display:inline-block;width:18px;margin-right:6px;'
+        f'border-top:2.5px dashed {ROUTE_COLOR};vertical-align:middle"></span>Route</div>',
+        '<div><i class="fa fa-plane" style="width:14px;margin-right:6px;color:#0b3d91"></i>'
+        "Diversion airport</div>",
+        '<div style="margin-top:6px;font-weight:600">Rings by wind snapshot</div>',
+        *(f"<div>{swatch.format(c=colors[ts])}{_short(ts)}</div>" for ts in shown),
+    ]
+    verdict = (
+        '<span style="color:{c};font-weight:600">{t}</span>'.format(
+            c=COVERED_COLOR if report["fully_covered"] else GAP_COLOR,
+            t="Fully covered" if report["fully_covered"] else f"Not fully covered &mdash; {report['gap_count']} gap(s)",
+        )
+    )
+    return (
+        '<div style="position:fixed;bottom:28px;left:12px;z-index:9999;background:#fff;'
+        "padding:10px 12px;border-radius:6px;box-shadow:0 1px 5px rgba(0,0,0,.35);"
+        'font:12px/1.6 system-ui,-apple-system,Segoe UI,sans-serif;color:#222;max-width:260px">'
+        f'<div style="font-weight:700;margin-bottom:4px">180-min wind-adjusted coverage</div>'
+        f"{''.join(rows)}"
+        f'<div style="margin-top:6px">{verdict}</div></div>'
+    )
+
+
+def build_coverage_map(
+    rings_fc: dict,
+    report: dict,
+    airports: list[Airport],
+    snapshots: list[str] | None = None,
+) -> folium.Map:
+    """Folium map of the route, waypoints (coloured by coverage), airports, and rings.
+
+    By default only the rings of snapshots actually used by some waypoint are drawn,
+    one toggleable layer per snapshot. Pass ``snapshots`` (timestamp strings) to draw
+    other snapshots instead, e.g. to step through all five.
+    """
+    all_ts = sorted({f["properties"]["timestamp"] for f in rings_fc["features"]})
+    colors = {ts: SNAPSHOT_COLORS[i % len(SNAPSHOT_COLORS)] for i, ts in enumerate(all_ts)}
+
+    waypoints = report["waypoints"]
+    users: dict[str, list[int]] = {}
+    for n, wp in enumerate(waypoints, 1):
+        users.setdefault(wp["snapshot_used"], []).append(n)
+
+    shown = sorted(users) if snapshots is None else list(snapshots)
+    unknown = set(shown) - set(all_ts)
+    if unknown:
+        raise ValueError(f"No rings for snapshot(s): {sorted(unknown)}")
+
+    # OpenStreetMap needs no API key (folium 0.20 warns that CartoDB tiles now do).
+    m = folium.Map(tiles="OpenStreetMap", control_scale=True)
+    # Waypoints get their own pane above the rings so re-toggling a ring layer
+    # can't bury them and swallow their clicks.
+    folium.map.CustomPane("waypoints", z_index=640, pointer_events=True).add_to(m)
+    bounds = [(wp["lat"], wp["lon"]) for wp in waypoints] + [(a.lat, a.lon) for a in airports]
+
+    for ts in shown:
+        label = f"Rings @ {_short(ts)}"
+        label += f" (WP {_ranges(users[ts])})" if ts in users else " (no waypoints)"
+        group = folium.FeatureGroup(name=label, show=True)
+        color = colors[ts]
+        for feature in rings_fc["features"]:
+            props = feature["properties"]
+            if props["timestamp"] != ts:
+                continue
+            folium.GeoJson(
+                feature,
+                style_function=lambda _f, c=color: {"color": c, "weight": 2, "fillColor": c, "fillOpacity": 0.07},
+                highlight_function=lambda _f, c=color: {"weight": 4, "fillOpacity": 0.18},
+                tooltip=(
+                    f"{props['icao']} ring @ {_short(ts)} "
+                    f"(wind u={props.get('wind_u_kt', '?')}, v={props.get('wind_v_kt', '?')} kt)"
+                ),
+            ).add_to(group)
+            bounds += [(lat, lon) for lon, lat in feature["geometry"]["coordinates"][0]]
+        group.add_to(m)
+
+    airport_group = folium.FeatureGroup(name="Diversion airports")
+    for a in airports:
+        folium.Marker(
+            [a.lat, a.lon],
+            tooltip=f"{a.icao} — {a.name}",
+            icon=folium.Icon(color="darkblue", icon="plane", prefix="fa"),
+        ).add_to(airport_group)
+    airport_group.add_to(m)
+
+    route_group = folium.FeatureGroup(name="Route & waypoints")
+    folium.PolyLine(
+        [(wp["lat"], wp["lon"]) for wp in waypoints],
+        color=ROUTE_COLOR, weight=2.5, dash_array="6 6", tooltip="Route",
+    ).add_to(route_group)
+    for n, wp in enumerate(waypoints, 1):
+        marker = folium.CircleMarker(
+            [wp["lat"], wp["lon"]],
+            radius=7,
+            color="#ffffff",
+            weight=1.5,
+            fill=True,
+            fill_color=COVERED_COLOR if wp["covered"] else GAP_COLOR,
+            fill_opacity=1.0,
+            tooltip=f"WP {n}: {'covered' if wp['covered'] else 'GAP'} — {_short(wp['eta'])}",
+            popup=folium.Popup(_popup_html(n, wp), max_width=300),
+        )
+        marker.options["pane"] = "waypoints"  # folium's path_options drops a `pane=` kwarg
+        marker.add_to(route_group)
+    route_group.add_to(m)
+
+    folium.LayerControl(collapsed=False).add_to(m)
+    m.get_root().html.add_child(folium.Element(_legend_html(shown, colors, report)))
+
+    lats, lons = zip(*bounds)
+    m.fit_bounds([[min(lats), min(lons)], [max(lats), max(lons)]])
+    return m

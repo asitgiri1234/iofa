@@ -84,15 +84,17 @@ def _read_json(path: Path | str):
         return json.load(f)
 
 
-def load_airports(path: Path | str = DATA_DIR / "sample_airports.json") -> list[Airport]:
+# parse_* build dataclasses from already-decoded JSON (e.g. a Streamlit upload);
+# load_* read the file and delegate.
+
+def parse_airports(data: list[dict]) -> list[Airport]:
     return [
         Airport(icao=a["icao"], name=a["name"], lat=float(a["lat"]), lon=float(a["lon"]))
-        for a in _read_json(path)
+        for a in data
     ]
 
 
-def load_aircraft(path: Path | str = DATA_DIR / "sample_aircraft.json") -> Aircraft:
-    a = _read_json(path)
+def parse_aircraft(a: dict) -> Aircraft:
     return Aircraft(
         aircraft=a["aircraft"],
         diversion_speed_kt=float(a["diversion_speed_kt"]),
@@ -101,8 +103,7 @@ def load_aircraft(path: Path | str = DATA_DIR / "sample_aircraft.json") -> Aircr
     )
 
 
-def load_route(path: Path | str = DATA_DIR / "sample_route.json") -> Route:
-    r = _read_json(path)
+def parse_route(r: dict) -> Route:
     return Route(
         origin=r["origin"],
         destination=r["destination"],
@@ -115,8 +116,8 @@ def load_route(path: Path | str = DATA_DIR / "sample_route.json") -> Route:
     )
 
 
-def load_wind_grid(path: Path | str = DATA_DIR / "sample_wind_grid.json") -> list[WindSnapshot]:
-    """Load all wind snapshots, sorted by timestamp."""
+def parse_wind_grid(data: list[dict]) -> list[WindSnapshot]:
+    """All wind snapshots, sorted by timestamp."""
     snapshots = [
         WindSnapshot(
             timestamp=parse_timestamp(s["timestamp"]),
@@ -125,6 +126,22 @@ def load_wind_grid(path: Path | str = DATA_DIR / "sample_wind_grid.json") -> lis
                 for p in s["grid"]
             ],
         )
-        for s in _read_json(path)
+        for s in data
     ]
     return sorted(snapshots, key=lambda s: s.timestamp)
+
+
+def load_airports(path: Path | str = DATA_DIR / "sample_airports.json") -> list[Airport]:
+    return parse_airports(_read_json(path))
+
+
+def load_aircraft(path: Path | str = DATA_DIR / "sample_aircraft.json") -> Aircraft:
+    return parse_aircraft(_read_json(path))
+
+
+def load_route(path: Path | str = DATA_DIR / "sample_route.json") -> Route:
+    return parse_route(_read_json(path))
+
+
+def load_wind_grid(path: Path | str = DATA_DIR / "sample_wind_grid.json") -> list[WindSnapshot]:
+    return parse_wind_grid(_read_json(path))

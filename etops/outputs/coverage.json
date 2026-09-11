@@ -1,0 +1,129 @@
+{
+  "waypoints": [
+    {
+      "lat": 29.99,
+      "lon": -90.26,
+      "eta": "2026-07-25T00:00:00Z",
+      "snapshot_used": "2026-07-25T00:00:00Z",
+      "covered": false,
+      "covering_airports": [],
+      "nearest_airport": "CYQX",
+      "nearest_airport_nm": 1979.55
+    },
+    {
+      "lat": 35.0,
+      "lon": -70.0,
+      "eta": "2026-07-25T02:13:22Z",
+      "snapshot_used": "2026-07-25T00:00:00Z",
+      "covered": true,
+      "covering_airports": [
+        "CYQX",
+        "CYYT"
+      ],
+      "nearest_airport": "CYQX",
+      "nearest_airport_nm": 1079.55
+    },
+    {
+      "lat": 40.0,
+      "lon": -55.0,
+      "eta": "2026-07-25T03:50:05Z",
+      "snapshot_used": "2026-07-25T06:00:00Z",
+      "covered": true,
+      "covering_airports": [
+        "CYQX",
+        "CYYT"
+      ],
+      "nearest_airport": "CYYT",
+      "nearest_airport_nm": 467.62
+    },
+    {
+      "lat": 45.0,
+      "lon": -45.0,
+      "eta": "2026-07-25T04:56:51Z",
+      "snapshot_used": "2026-07-25T06:00:00Z",
+      "covered": true,
+      "covering_airports": [
+        "CYQX",
+        "CYYT",
+        "LPLA"
+      ],
+      "nearest_airport": "CYYT",
+      "nearest_airport_nm": 357.66
+    },
+    {
+      "lat": 48.0,
+      "lon": -35.0,
+      "eta": "2026-07-25T05:53:09Z",
+      "snapshot_used": "2026-07-25T06:00:00Z",
+      "covered": true,
+      "covering_airports": [
+        "BIKF",
+        "CYQX",
+        "CYYT",
+        "EINN",
+        "LPLA"
+      ],
+      "nearest_airport": "LPLA",
+      "nearest_airport_nm": 652.48
+    },
+    {
+      "lat": 50.0,
+      "lon": -25.0,
+      "eta": "2026-07-25T06:44:35Z",
+      "snapshot_used": "2026-07-25T06:00:00Z",
+      "covered": true,
+      "covering_airports": [
+        "BIKF",
+        "CYQX",
+        "CYYT",
+        "EINN",
+        "LPLA"
+      ],
+      "nearest_airport": "EINN",
+      "nearest_airport_nm": 622.76
+    },
+    {
+      "lat": 49.5,
+      "lon": -15.0,
+      "eta": "2026-07-25T07:33:11Z",
+      "snapshot_used": "2026-07-25T06:00:00Z",
+      "covered": true,
+      "covering_airports": [
+        "BIKF",
+        "EINN",
+        "LPLA"
+      ],
+      "nearest_airport": "EINN",
+      "nearest_airport_nm": 298.86
+    },
+    {
+      "lat": 49.0,
+      "lon": -5.0,
+      "eta": "2026-07-25T08:22:17Z",
+      "snapshot_used": "2026-07-25T06:00:00Z",
+      "covered": true,
+      "covering_airports": [
+        "BIKF",
+        "EINN",
+        "LPLA"
+      ],
+      "nearest_airport": "EINN",
+      "nearest_airport_nm": 267.37
+    },
+    {
+      "lat": 49.0097,
+      "lon": 2.5479,
+      "eta": "2026-07-25T08:59:26Z",
+      "snapshot_used": "2026-07-25T06:00:00Z",
+      "covered": true,
+      "covering_airports": [
+        "BIKF",
+        "EINN"
+      ],
+      "nearest_airport": "EINN",
+      "nearest_airport_nm": 487.32
+    }
+  ],
+  "fully_covered": false,
+  "gap_count": 1
+}

@@ -1,18 +1,30 @@
 # Wind-adjusted diversion range rings (ETOPS assessment)
 
+**▶ Live app: <https://etops-diversion-rings.streamlit.app/>**
+
 Computes a wind-adjusted 180-minute diversion ring ("egg shape") for each candidate
 airport at each of five 6-hourly wind snapshots, then checks whether every waypoint of a
 route falls inside at least one ring **from the snapshot nearest that waypoint's ETA**.
 
+## The problem
+
+A twin-engine aircraft on an oceanic crossing must stay within its ETOPS rating time of a
+suitable diversion airport. In still air that reachable area is a circle — here
+430 kt × 180 min = **1,290 nm**. Wind breaks the symmetry: the aircraft travels further
+downwind and less upwind in the same time, so the circle becomes an egg shape whose
+long axis points downwind. Because the wind itself changes through the flight, each
+waypoint must be judged against the wind that applies *when the aircraft is actually
+there*, not against a single static field.
+
 ## How to run
 
-Python 3.10+ (developed on 3.13). From the repository root:
+Python 3.10+ (developed and tested on 3.13). From the repository root:
 
 ```bash
 pip install -r etops/requirements.txt
 
 python etops/main.py              # writes the three output files (below)
-pytest etops                      # full test suite
+pytest etops                      # full test suite (128 tests)
 streamlit run etops/app.py        # interactive app
 ```
 
@@ -30,9 +42,10 @@ steps through the five snapshots so you can watch the rings change shape, embeds
 shows the per-waypoint coverage table, and offers downloads of `rings.geojson`,
 `coverage.json` and the map.
 
-**Streamlit Community Cloud:** point the app at `etops/app.py`. Dependencies come from
-`etops/requirements.txt` (next to the entry point) and the theme from `.streamlit/config.toml`
-at the repository root.
+**Streamlit Community Cloud:** the app is deployed from `etops/app.py` on `main`.
+Dependencies come from `etops/requirements.txt` (next to the entry point, which Community
+Cloud searches before the repository root) and the theme from `.streamlit/config.toml` at
+the repository root.
 
 ## Result for the sample route (MSY → CDG)
 
@@ -51,7 +64,9 @@ at the repository root.
 `fully_covered: false`, `gap_count: 1`. **This is the correct answer, not a bug**: the
 route begins near New Orleans, about 1,980 nm from the closest of the five diversion
 airports, well beyond any ring (still-air radius 1,290 nm; the largest wind-stretched reach
-in any of the 25 rings is 1,480.8 nm, Keflavik at 26 Jul 00Z).
+in any of the 25 rings is 1,480.8 nm, Keflavik at 26 Jul 00Z). The oceanic portion of the
+crossing — the part the ETOPS rule exists to govern — is covered end to end, usually by
+three to five airports at once.
 
 ## Assumptions
 
@@ -99,21 +114,25 @@ Additional judgement calls:
 
 ## Verification
 
-The tests reproduce `worked_example.pdf` exactly: at Gander, ETA 05:00Z selects the 06:00Z
-snapshot and grid point (49, -54) with u = 32.0, v = -2.4. The ring distances at
-0/90/180/270° are 1282.80 / 1386.00 / 1297.20 / 1194.00 nm, and the eastward reach across
-the five snapshots is 1376.10 → 1422.00 nm. They also check that the ring is a perfect
-1290 nm circle in still air, that it bulges downwind, that each waypoint uses only its own
-snapshot's rings, and that the app runs headlessly across all five snapshots.
+`pytest etops` runs 128 tests. They reproduce `worked_example.pdf` exactly: at Gander,
+ETA 05:00Z selects the 06:00Z snapshot and grid point (49, -54) with u = 32.0, v = -2.4.
+The ring distances at 0/90/180/270° are 1282.80 / 1386.00 / 1297.20 / 1194.00 nm, and the
+eastward reach across the five snapshots is 1376.10 → 1422.00 nm. They also check that the
+ring is a perfect 1290 nm circle in still air, that it bulges downwind, that each waypoint
+uses only its own snapshot's rings, and that the app runs headlessly across all five
+snapshots.
 
 ## Layout
 
 ```
+.streamlit/
+  config.toml    theme + server settings (read by Community Cloud)
 etops/
   data/          sample JSON inputs
   etops/         loaders, geo, wind, rings, coverage, mapping, pipeline
   outputs/       rings.geojson, coverage.json, coverage_map.html
-  tests/
+  tests/         128 tests
   main.py        CLI: writes the three outputs
   app.py         Streamlit app
+  requirements.txt
 ```

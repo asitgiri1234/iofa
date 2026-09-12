@@ -116,7 +116,9 @@ def main() -> None:
     snapshots = sorted({f["properties"]["timestamp"] for f in rings["features"]})
     covered = sum(wp["covered"] for wp in report["waypoints"])
 
-    c1, c2, c3, c4 = st.columns(4)
+    # The verdict text is the longest value here; give its column extra width so
+    # "Not fully covered" doesn't ellipsise on narrower screens.
+    c1, c2, c3, c4 = st.columns([1.6, 1, 1.4, 1.4])
     c1.metric("Route", "Fully covered" if report["fully_covered"] else "Not fully covered")
     c2.metric("Gaps", report["gap_count"])
     c3.metric("Waypoints covered", f"{covered} / {len(report['waypoints'])}")

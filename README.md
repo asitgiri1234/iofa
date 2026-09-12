@@ -123,6 +123,20 @@ ring is a perfect 1290 nm circle in still air, that it bulges downwind, that eac
 uses only its own snapshot's rings, and that the app runs headlessly across all five
 snapshots.
 
+Each self-check suggested in the spec has a dedicated test:
+
+| Spec self-check | Test |
+|---|---|
+| Still-air case is a true circle | `test_still_air_is_a_circle` |
+| Ring bulges toward the tailwind (sign convention) | `test_egg_points_downwind` |
+| Rings genuinely differ across snapshots | `test_rings_differ_across_snapshots` |
+| Worked example: snapshot selection | `test_worked_example_picks_0600_snapshot` |
+| Worked example: nearest grid point and (u, v) | `test_worked_example_nearest_grid_point`, `test_worked_example_wind_at` |
+| Worked example: the four cardinal distances | `test_gander_0600_cardinal_distances` |
+| GeoJSON coordinate order is `[lon, lat]` | `test_coordinates_are_lon_lat` |
+| Polygon closure (73 positions, first repeated last) | `test_build_ring_has_73_points_closed` |
+| Nearest-snapshot ties break to the earlier snapshot | `test_tie_breaks_to_earlier_snapshot` |
+
 ## Layout
 
 ```

@@ -53,6 +53,17 @@ def read_inputs() -> tuple[dict[str, str], list[str]]:
     return texts, defaulted
 
 
+def read_display_options() -> bool:
+    """Sidebar display controls. Returns whether to overlay the still-air circle."""
+    st.sidebar.header("Display")
+    return st.sidebar.checkbox(
+        "Overlay still-air circle (no wind)",
+        value=False,
+        help="Draws the plain circle the aircraft could reach with no wind at all. "
+             "Every bulge and pinch you see between it and a ring is the wind.",
+    )
+
+
 @st.cache_data(show_spinner="Computing rings and coverage…")
 def compute(airports_json: str, aircraft_json: str, wind_json: str, route_json: str):
     airports = parse_airports(json.loads(airports_json))
@@ -107,6 +118,7 @@ def main() -> None:
     )
 
     texts, _ = read_inputs()
+    show_still_air = read_display_options()
     try:
         airports, aircraft, rings, report = compute(texts["airports"], texts["aircraft"], texts["wind"], texts["route"])
     except (ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
@@ -129,11 +141,12 @@ def main() -> None:
         options=[PER_WAYPOINT, *snapshots],
         format_func=lambda s: s if s == PER_WAYPOINT else f"{s[:10]} {s[11:16]}Z",
     )
+    still_air_nm = aircraft.still_air_radius_nm if show_still_air else None
     if view == PER_WAYPOINT:
-        fmap = build_coverage_map(rings, report, airports)
+        fmap = build_coverage_map(rings, report, airports, still_air_nm=still_air_nm)
         st.caption("Showing, for each waypoint, only the rings from the snapshot used for its check.")
     else:
-        fmap = build_coverage_map(rings, report, airports, snapshots=[view])
+        fmap = build_coverage_map(rings, report, airports, snapshots=[view], still_air_nm=still_air_nm)
         st.caption(
             f"Showing all rings at {view}. Waypoint colours still reflect each waypoint's own "
             "snapshot, so they may not match these rings."
@@ -170,7 +183,10 @@ def main() -> None:
         mime="application/json", width="stretch",
     )
     d3.download_button(
-        "coverage_map.html", build_coverage_map(rings, report, airports).get_root().render(),
+        "coverage_map.html",
+        # Matches what main.py writes, so the download and the CLI output agree.
+        build_coverage_map(rings, report, airports,
+                           still_air_nm=aircraft.still_air_radius_nm).get_root().render(),
         file_name="coverage_map.html", mime="text/html", width="stretch",
     )
 

@@ -29,7 +29,9 @@ def main() -> None:
 
     rings_path.write_text(json.dumps(rings, indent=2), encoding="utf-8")
     coverage_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    build_coverage_map(rings, report, airports).save(str(map_path))
+    # Overlay the plain no-wind circle so the wind distortion of each ring is visible.
+    still_air = build_coverage_map(rings, report, airports, still_air_nm=aircraft.still_air_radius_nm)
+    still_air.save(str(map_path))
 
     print(f"Wrote {len(rings['features'])} ring polygons to {rings_path}")
     print(f"Wrote coverage report to {coverage_path}")

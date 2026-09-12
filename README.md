@@ -62,8 +62,9 @@ the repository root.
 | 9 | 08:59 | 49.01, 2.55 | 06Z | BIKF, EINN |
 
 `fully_covered: false`, `gap_count: 1`. **This is the correct answer, not a bug**: the
-route begins near New Orleans, about 1,980 nm from the closest of the five diversion
-airports, well beyond any ring (still-air radius 1,290 nm; the largest wind-stretched reach
+route begins near New Orleans, about 1,980 nm from the closest of the five North Atlantic
+diversion airports (Gander CYQX, St. John's CYYT, Keflavik BIKF, Shannon EINN and Lajes
+LPLA), well beyond any ring (still-air radius 1,290 nm; the largest wind-stretched reach
 in any of the 25 rings is 1,480.8 nm, Keflavik at 26 Jul 00Z). The oceanic portion of the
 crossing — the part the ETOPS rule exists to govern — is covered end to end, usually by
 three to five airports at once.
